@@ -3,3 +3,10 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
+
+# Frontend env and build artifacts
+frontend/.env
+frontend/dist/
+
+# OS files
+.DS_Store

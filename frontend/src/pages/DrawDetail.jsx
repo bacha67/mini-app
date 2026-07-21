@@ -11,12 +11,17 @@ export default function DrawDetail() {
   const [draw, setDraw] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [soldTickets, setSoldTickets] = useState([]);
 
   useEffect(() => {
     async function fetchDraw() {
       try {
-        const res = await apiClient.get(`/draws/${id}`);
-        setDraw(res.data);
+        const [drawRes, ticketsRes] = await Promise.all([
+          apiClient.get(`/draws/${id}`),
+          apiClient.get(`/draws/${id}/tickets`),
+        ]);
+        setDraw(drawRes.data);
+        setSoldTickets(ticketsRes.data.soldTicketNumbers || []);
       } catch (err) {
         console.error('Failed to load draw details:', err);
       } finally {
@@ -94,7 +99,7 @@ export default function DrawDetail() {
           <span style={styles.sectionTitle}>Available Ticket Pool</span>
           <span style={styles.remainingTag}>{remainingTickets} Left</span>
         </div>
-        <NumberGrid totalTickets={draw.total_tickets} soldTickets={[]} />
+        <NumberGrid totalTickets={draw.total_tickets} soldTickets={soldTickets} />
       </div>
 
       {/* Quantity Controls */}

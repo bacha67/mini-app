@@ -53,3 +53,18 @@ export async function assignTicketsToUser(ticketIds, userId) {
   const res = await pool.query(query, [userId, ticketIds]);
   return res.rows;
 }
+
+/**
+ * Get all ticket numbers that are NOT available (sold, reserved, etc.)
+ * @param {number|string} drawId
+ * @returns {Promise<number[]>} Array of ticket_number values
+ */
+export async function getUnavailableTicketNumbers(drawId) {
+  const query = `
+    SELECT ticket_number
+    FROM tickets
+    WHERE draw_id = $1 AND status != 'available'
+  `;
+  const res = await pool.query(query, [drawId]);
+  return res.rows.map((r) => r.ticket_number);
+}

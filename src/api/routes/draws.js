@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getOpenDraws, getDrawById } from '../../db/drawsRepo.js';
+import { getUnavailableTicketNumbers } from '../../db/ticketsRepo.js';
 
 const router = Router();
 
@@ -28,6 +29,18 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error(`Error fetching draw ${req.params.id}:`, error);
     res.status(500).json({ error: 'Failed to fetch draw' });
+  }
+});
+
+// GET /api/draws/:id/tickets -> Get sold/unavailable ticket numbers for a draw
+router.get('/:id/tickets', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const soldTicketNumbers = await getUnavailableTicketNumbers(id);
+    res.json({ soldTicketNumbers });
+  } catch (error) {
+    console.error(`Error fetching tickets for draw ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to fetch ticket numbers' });
   }
 });
 
