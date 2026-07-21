@@ -6,15 +6,18 @@ import pool from './pool.js';
  * @param {number|string} drawId
  * @param {number} quantity
  * @param {number} amount
+ * @param {string} [buyerName]
+ * @param {string} [buyerPhone]
+ * @param {string} [bankSelected]
  * @returns {Promise<object>} Created transaction row
  */
-export async function createTransaction(userId, drawId, quantity, amount) {
+export async function createTransaction(userId, drawId, quantity, amount, buyerName = null, buyerPhone = null, bankSelected = null) {
   const query = `
-    INSERT INTO transactions (user_id, draw_id, quantity, amount, status)
-    VALUES ($1, $2, $3, $4, 'pending')
+    INSERT INTO transactions (user_id, draw_id, quantity, amount, buyer_name, buyer_phone, bank_selected, status)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
     RETURNING *
   `;
-  const res = await pool.query(query, [userId, drawId, quantity, amount]);
+  const res = await pool.query(query, [userId, drawId, quantity, amount, buyerName, buyerPhone, bankSelected]);
   return res.rows[0];
 }
 

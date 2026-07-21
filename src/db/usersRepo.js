@@ -1,6 +1,17 @@
 import pool from './pool.js';
 
 /**
+ * Get a user row by internal id
+ * @param {number|string} id
+ * @returns {Promise<object|null>} User row or null if not found
+ */
+export async function getUserById(id) {
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const res = await pool.query(query, [id]);
+  return res.rows[0] || null;
+}
+
+/**
  * Get a user row by telegram_id
  * @param {number|string} telegramId
  * @returns {Promise<object|null>} User row or null if not found
