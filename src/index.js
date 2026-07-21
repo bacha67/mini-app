@@ -6,9 +6,11 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-// Webhook configuration
-const domain = process.env.MINI_APP_URL; // e.g. https://552e01d4b4107c.lhr.life
-const webhookPath = `/telegraf/${process.env.BOT_TOKEN}`; // secret path prevents spoofed updates
+// Webhook configuration — strip trailing slash from domain if present
+const rawDomain = process.env.MINI_APP_URL || 'http://localhost:3000';
+const domain = rawDomain.replace(/\/+$/, '');
+const webhookPath = `/telegraf/${process.env.BOT_TOKEN}`;
+const fullWebhookUrl = `${domain}${webhookPath}`;
 
 // Register the bot's webhook handler with Express BEFORE app.listen
 app.use(bot.webhookCallback(webhookPath));
@@ -19,8 +21,9 @@ const server = app.listen(PORT, async () => {
 
   // Set the Telegram webhook after the server is live
   try {
-    await bot.telegram.setWebhook(`${domain}${webhookPath}`);
-    console.log('🔗 Webhook set:', `${domain}${webhookPath}`);
+    console.log('Attempting to set webhook to:', fullWebhookUrl);
+    await bot.telegram.setWebhook(fullWebhookUrl);
+    console.log('🔗 Webhook set successfully:', fullWebhookUrl);
   } catch (err) {
     console.error('❌ Failed to set Telegram webhook:', err.message);
   }
