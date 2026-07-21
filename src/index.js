@@ -6,9 +6,13 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-// Webhook configuration — strip trailing slash from domain if present
+// Webhook configuration — strip trailing slash and ensure HTTPS for public domains
 const rawDomain = process.env.MINI_APP_URL || 'http://localhost:3000';
-const domain = rawDomain.replace(/\/+$/, '');
+let domain = rawDomain.replace(/\/+$/, '');
+if (domain.startsWith('http://') && !domain.includes('localhost')) {
+  domain = domain.replace('http://', 'https://');
+}
+
 const webhookPath = `/telegraf/${process.env.BOT_TOKEN}`;
 const fullWebhookUrl = `${domain}${webhookPath}`;
 
