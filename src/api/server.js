@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bot from '../bot.js';
 import drawsRouter from './routes/draws.js';
 import checkoutRouter from './routes/checkout.js';
 
@@ -9,9 +10,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Middleware to parse JSON and URL-encoded bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 1. CRITICAL: Register Telegraf webhook callback FIRST before express.json()
+// This ensures Telegraf receives the unparsed, raw request stream from Telegram
+if (process.env.BOT_TOKEN) {
+  const webhookPath = `/telegraf/${process.env.BOT_TOKEN}`;
+  app.use(bot.webhookCallback(webhookPath));
+}
+
+// 2. Middleware to parse JSON and URL-encoded bodies for API routes
+app.use('/api', express.json());
+app.use('/api', express.urlencoded({ extended: true }));
 
 // CORS middleware for WebApp API requests
 app.use((req, res, next) => {

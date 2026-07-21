@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
+dotenv.config();
+
 import bot from './bot.js';
 import app from './api/server.js';
-
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,9 +15,6 @@ if (domain.startsWith('http://') && !domain.includes('localhost')) {
 
 const webhookPath = `/telegraf/${process.env.BOT_TOKEN}`;
 const fullWebhookUrl = `${domain}${webhookPath}`;
-
-// Register the bot's webhook handler with Express BEFORE app.listen
-app.use(bot.webhookCallback(webhookPath));
 
 // Start Express API server (serves API + static frontend + webhook)
 const server = app.listen(PORT, async () => {
