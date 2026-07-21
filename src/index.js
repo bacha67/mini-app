@@ -21,9 +21,9 @@ const server = app.listen(PORT, async () => {
 
   // Set the Telegram webhook after the server is live
   try {
-    console.log('Attempting to set webhook to:', fullWebhookUrl);
+    console.log('Attempting to set webhook to:', `${domain}/telegraf/[REDACTED_TOKEN]`);
     await bot.telegram.setWebhook(fullWebhookUrl);
-    console.log('🔗 Webhook set successfully:', fullWebhookUrl);
+    console.log('🔗 Webhook set successfully:', `${domain}/telegraf/[REDACTED_TOKEN]`);
   } catch (err) {
     console.error('❌ Failed to set Telegram webhook:', err.message);
   }
