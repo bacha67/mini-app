@@ -1,6 +1,11 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import drawsRouter from './routes/draws.js';
 import checkoutRouter from './routes/checkout.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -27,5 +32,14 @@ app.get('/api/health', (req, res) => {
 // Mount API routes
 app.use('/api/draws', drawsRouter);
 app.use('/api/checkout', checkoutRouter);
+
+// Serve built React frontend static files
+const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(distPath));
+
+// Fallback for SPA client-side React routing (Express 5 compatible)
+app.use((req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 export default app;
