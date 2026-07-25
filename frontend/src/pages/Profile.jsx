@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+import apiClient from '../api/client.js';
 import { useLanguage } from '../i18n/useLanguage.jsx';
 
 export default function Profile() {
