@@ -18,6 +18,7 @@ import {
 } from './db/transactionsRepo.js';
 
 import pool from './db/pool.js';
+import { botStrings } from './i18n/botStrings.js';
 
 dotenv.config();
 
@@ -33,14 +34,15 @@ const bot = new Telegraf(botToken);
 /**
  * Reusable helper function to send the "Open App" inline keyboard message
  */
-function sendOpenAppMessage(ctx, user) {
+function sendOpenAppMessage(ctx, user, lang = 'en') {
   const webAppUrl = process.env.MINI_APP_URL || 'https://placeholder.com';
+  const strings = botStrings[lang] || botStrings.en;
   const firstName = user?.first_name || ctx.from.first_name || 'User';
 
   return ctx.reply(
-    `Welcome, ${firstName}! Click the button below to open the app:`,
+    `Hello ${firstName}! ${strings.welcomeBack}`,
     Markup.inlineKeyboard([
-      [Markup.button.webApp('🚀 Open App', webAppUrl)],
+      [Markup.button.webApp(strings.openApp, webAppUrl)],
     ])
   );
 }
@@ -50,22 +52,59 @@ bot.start(async (ctx) => {
   const telegramId = ctx.from.id;
   const firstName = ctx.from.first_name || 'User';
 
-  let user = await getUserByTelegramId(telegramId);
+  const user = await getUserByTelegramId(telegramId);
 
+  // 1. If user doesn't exist yet: prompt language selection
   if (!user) {
-    user = await createUser(telegramId, firstName);
+    return ctx.reply(
+      '🌐 Please choose your language / እባክዎ ቋንቋዎን ይምረጡ / Maaloo afaan keessan filadhaa:',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('🇬🇧 English', 'lang_en')],
+        [Markup.button.callback('🇪🇹 አማርኛ', 'lang_am')],
+        [Markup.button.callback('🇪🇹 Afaan Oromoo', 'lang_om')],
+      ])
+    );
   }
 
-  // If user exists and already has a phone saved
-  if (user && user.phone) {
-    return sendOpenAppMessage(ctx, user);
+  const lang = user.language || 'en';
+  const strings = botStrings[lang] || botStrings.en;
+
+  // 2. If user exists and already has phone saved: greet in saved language directly
+  if (user.phone) {
+    return sendOpenAppMessage(ctx, user, lang);
   }
 
-  // If user needs to share phone number
+  // 3. If user exists but needs to share phone number
   return ctx.reply(
-    `Hello ${firstName}! Please share your phone number to continue:`,
+    strings.sharePhone,
     Markup.keyboard([
-      [Markup.button.contactRequest('📱 Share Phone Number')],
+      [Markup.button.contactRequest(strings.shareButtonText)],
+    ]).resize().oneTime()
+  );
+});
+
+// bot.action language selection handler
+bot.action(/^lang_(en|am|om)$/, async (ctx) => {
+  const langCode = ctx.match[1];
+  const telegramId = ctx.from.id;
+  const firstName = ctx.from.first_name || 'User';
+
+  // Create user with selected language
+  const user = await createUser(telegramId, firstName, langCode);
+  const strings = botStrings[langCode] || botStrings.en;
+
+  await ctx.answerCbQuery();
+
+  // If user already has phone (e.g. re-selected language), send open app
+  if (user.phone) {
+    return sendOpenAppMessage(ctx, user, langCode);
+  }
+
+  // Ask for phone number in selected language
+  return ctx.reply(
+    strings.sharePhone,
+    Markup.keyboard([
+      [Markup.button.contactRequest(strings.shareButtonText)],
     ]).resize().oneTime()
   );
 });
@@ -82,10 +121,11 @@ bot.on('contact', async (ctx) => {
 
   // Save phone number to database
   const updatedUser = await updateUserPhone(telegramId, contact.phone_number);
+  const lang = updatedUser?.language || 'en';
 
-  // Remove reply keyboard and send Open App message
+  // Remove reply keyboard and send Open App message in user's language
   await ctx.reply('Phone number saved! ✅', Markup.removeKeyboard());
-  return sendOpenAppMessage(ctx, updatedUser);
+  return sendOpenAppMessage(ctx, updatedUser, lang);
 });
 
 // bot.action approve handler
@@ -150,21 +190,16 @@ bot.action(/^approve_(\d+)$/, async (ctx) => {
       await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
     }
 
-    // 10. Notify buyer via Telegram
+    // 10. Notify buyer via Telegram in their saved language
     const buyerUser = await getUserById(transaction.user_id);
     if (buyerUser && buyerUser.telegram_id) {
-      const draw = await getDrawById(transaction.draw_id);
-      const drawTitle = draw ? draw.title : `Draw #${transaction.draw_id}`;
-      const numbersList = ticketNumbers.join(', ');
+      const buyerLang = buyerUser.language || 'en';
+      const strings = botStrings[buyerLang] || botStrings.en;
+      const numbersList = ticketNumbers.map((n) => `#${n}`).join(', ');
 
-      const buyerMsg = `
-🎉 <b>Payment Approved!</b>
-
-Your payment for <b>${drawTitle}</b> has been confirmed.
-🎟 <b>Tickets Assigned (${tickets.length}):</b> #${numbersList}
-
-Good luck! 🍀
-      `.trim();
+      const buyerMsg = typeof strings.paymentApproved === 'function'
+        ? strings.paymentApproved(numbersList)
+        : `🎉 Payment confirmed! Your ticket numbers: ${numbersList}`;
 
       try {
         await bot.telegram.sendMessage(buyerUser.telegram_id, buyerMsg, { parse_mode: 'HTML' });
@@ -211,18 +246,13 @@ bot.action(/^reject_(\d+)$/, async (ctx) => {
       await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
     }
 
-    // Notify buyer
+    // Notify buyer in their saved language
     const buyerUser = await getUserById(transaction.user_id);
     if (buyerUser && buyerUser.telegram_id) {
-      const draw = await getDrawById(transaction.draw_id);
-      const drawTitle = draw ? draw.title : `Draw #${transaction.draw_id}`;
+      const buyerLang = buyerUser.language || 'en';
+      const strings = botStrings[buyerLang] || botStrings.en;
 
-      const buyerMsg = `
-❌ <b>Payment Rejected</b>
-
-Your payment for <b>${drawTitle}</b> could not be verified.
-If you believe this is an error, please contact support.
-      `.trim();
+      const buyerMsg = strings.paymentRejected;
 
       try {
         await bot.telegram.sendMessage(buyerUser.telegram_id, buyerMsg, { parse_mode: 'HTML' });

@@ -23,18 +23,21 @@ export async function getUserByTelegramId(telegramId) {
 }
 
 /**
- * Create a new user with telegram_id and first_name
+ * Create a new user with telegram_id, first_name, and language
  * @param {number|string} telegramId
  * @param {string} firstName
+ * @param {string} [language]
  * @returns {Promise<object>} The created user row
  */
-export async function createUser(telegramId, firstName) {
+export async function createUser(telegramId, firstName, language = 'en') {
   const query = `
-    INSERT INTO users (telegram_id, first_name)
-    VALUES ($1, $2)
+    INSERT INTO users (telegram_id, first_name, language)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (telegram_id) DO UPDATE
+    SET first_name = EXCLUDED.first_name, language = EXCLUDED.language
     RETURNING *
   `;
-  const res = await pool.query(query, [telegramId, firstName]);
+  const res = await pool.query(query, [telegramId, firstName, language]);
   return res.rows[0];
 }
 
