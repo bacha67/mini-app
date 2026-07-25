@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import bot from '../bot.js';
 import drawsRouter from './routes/draws.js';
 import checkoutRouter from './routes/checkout.js';
+import usersRouter from './routes/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 // Mount API routes
 app.use('/api/draws', drawsRouter);
 app.use('/api/checkout', checkoutRouter);
+app.use('/api/users', usersRouter);
 
 // Serve built React frontend static files
 const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');

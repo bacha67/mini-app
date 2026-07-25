@@ -68,3 +68,20 @@ export async function getUnavailableTicketNumbers(drawId) {
   const res = await pool.query(query, [drawId]);
   return res.rows.map((r) => r.ticket_number);
 }
+
+/**
+ * Get active/sold tickets assigned to a specific user grouped with draw details
+ * @param {number|string} userId
+ * @returns {Promise<Array>} List of user tickets with draw info
+ */
+export async function getUserTickets(userId) {
+  const query = `
+    SELECT t.*, d.title AS draw_title
+    FROM tickets t
+    LEFT JOIN draws d ON d.id = t.draw_id
+    WHERE t.user_id = $1 AND t.status = 'sold'
+    ORDER BY t.purchased_at DESC
+  `;
+  const res = await pool.query(query, [userId]);
+  return res.rows;
+}

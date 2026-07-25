@@ -84,3 +84,20 @@ export async function rejectTransaction(transactionId, adminId) {
   const res = await pool.query(query, [adminId, transactionId]);
   return res.rows[0] || null;
 }
+
+/**
+ * Get pending transactions for a user with draw title
+ * @param {number|string} userId
+ * @returns {Promise<Array>} Pending transaction rows
+ */
+export async function getPendingTransactionsForUser(userId) {
+  const query = `
+    SELECT t.*, d.title AS draw_title
+    FROM transactions t
+    LEFT JOIN draws d ON d.id = t.draw_id
+    WHERE t.user_id = $1 AND t.status = 'pending'
+    ORDER BY t.created_at DESC
+  `;
+  const res = await pool.query(query, [userId]);
+  return res.rows;
+}
