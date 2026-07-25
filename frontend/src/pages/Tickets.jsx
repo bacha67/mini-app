@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import apiClient from '../api/client.js';
+import { useLanguage } from '../i18n/useLanguage.jsx';
 
 export default function Tickets() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('purchased');
   const [pendingTransactions, setPendingTransactions] = useState([]);
   const [activeTickets, setActiveTickets] = useState([]);
@@ -41,7 +41,7 @@ export default function Tickets() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>My Tickets 🎟️</h2>
+      <h2 style={styles.title}>{t('myTicketsTitle')}</h2>
 
       {/* Tabs */}
       <div style={styles.tabContainer}>
@@ -49,13 +49,13 @@ export default function Tickets() {
           style={activeTab === 'purchased' ? { ...styles.tab, ...styles.activeTab } : styles.tab}
           onClick={() => setActiveTab('purchased')}
         >
-          Active Tickets
+          {t('activeTicketsTab')}
         </button>
         <button
           style={activeTab === 'pending' ? { ...styles.tab, ...styles.activeTab } : styles.tab}
           onClick={() => setActiveTab('pending')}
         >
-          Pending Approval ({pendingTransactions.length})
+          {t('pendingApprovalTab')} ({pendingTransactions.length})
         </button>
       </div>
 
@@ -67,9 +67,9 @@ export default function Tickets() {
         Object.keys(groupedTickets).length === 0 ? (
           <div className="glass-card" style={styles.emptyCard}>
             <span style={{ fontSize: '2.5rem' }}>🎟️</span>
-            <h4 style={{ margin: '8px 0 4px 0', color: '#fff' }}>No active tickets yet</h4>
+            <h4 style={{ margin: '8px 0 4px 0', color: '#fff' }}>{t('noActiveTicketsTitle')}</h4>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-              Participate in active draws to get your lucky tickets!
+              {t('noActiveTicketsDesc')}
             </p>
           </div>
         ) : (
@@ -77,10 +77,10 @@ export default function Tickets() {
             <div key={drawTitle} className="glass-card" style={styles.card}>
               <div style={styles.ticketHeader}>
                 <span style={styles.drawName}>{drawTitle}</span>
-                <span style={styles.statusBadge}>ACTIVE</span>
+                <span style={styles.statusBadge}>{t('activeBadge')}</span>
               </div>
               <div style={styles.ticketBody}>
-                <span style={styles.ticketLabel}>Assigned Ticket Numbers:</span>
+                <span style={styles.ticketLabel}>{t('assignedTicketNumbers')}</span>
                 <div style={styles.numbersGrid}>
                   {numbers.map((num) => (
                     <span key={num} style={styles.ticketPill}>
@@ -95,9 +95,9 @@ export default function Tickets() {
       ) : pendingTransactions.length === 0 ? (
         <div className="glass-card" style={styles.emptyCard}>
           <span style={{ fontSize: '2.5rem' }}>⏳</span>
-          <h4 style={{ margin: '8px 0 4px 0', color: '#fff' }}>No pending orders</h4>
+          <h4 style={{ margin: '8px 0 4px 0', color: '#fff' }}>{t('noPendingOrdersTitle')}</h4>
           <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            When you purchase tickets, your pending receipts will show here while admin verifies your payment.
+            {t('noPendingOrdersDesc')}
           </p>
         </div>
       ) : (
@@ -105,29 +105,29 @@ export default function Tickets() {
           <div key={tx.id} className="glass-card" style={styles.card}>
             <div style={styles.ticketHeader}>
               <span style={styles.drawName}>{tx.draw_title || `Draw #${tx.draw_id}`}</span>
-              <span style={styles.pendingBadge}>PENDING REVIEW ⏳</span>
+              <span style={styles.pendingBadge}>{t('pendingReviewBadge')}</span>
             </div>
             <div style={styles.pendingBody}>
               <div style={styles.pendingRow}>
-                <span>Order Ref:</span>
+                <span>{t('orderRef')}</span>
                 <strong>#{tx.id}</strong>
               </div>
               <div style={styles.pendingRow}>
-                <span>Quantity:</span>
+                <span>{t('quantityLabel')}</span>
                 <strong>{tx.quantity} Tickets</strong>
               </div>
               <div style={styles.pendingRow}>
-                <span>Total Amount:</span>
+                <span>{t('totalAmountLabel')}</span>
                 <strong style={{ color: '#818cf8' }}>{tx.amount} ETB</strong>
               </div>
               {tx.bank_selected && (
                 <div style={styles.pendingRow}>
-                  <span>Bank:</span>
+                  <span>{t('bankLabel')}</span>
                   <strong>{tx.bank_selected}</strong>
                 </div>
               )}
               <div style={styles.pendingRow}>
-                <span>Submitted:</span>
+                <span>{t('submittedDate')}</span>
                 <small style={{ color: '#94a3b8' }}>{new Date(tx.created_at).toLocaleString()}</small>
               </div>
             </div>

@@ -63,4 +63,16 @@ router.get('/:telegramId/stats', async (req, res) => {
   }
 });
 
+// GET /api/users/:telegramId/language -> Get user's saved language preference
+router.get('/:telegramId/language', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const user = await getUserByTelegramId(telegramId);
+    res.json({ language: user?.language || 'en' });
+  } catch (error) {
+    console.error(`Error fetching language for user ${req.params.telegramId}:`, error);
+    res.json({ language: 'en' });
+  }
+});
+
 export default router;

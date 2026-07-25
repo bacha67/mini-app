@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import apiClient from '../api/client.js';
+import { useLanguage } from '../i18n/useLanguage.jsx';
 
 export default function Profile() {
+  const { t, language } = useLanguage();
   const user = window.Telegram?.WebApp?.initDataUnsafe?.user || {
     id: 123456789,
     first_name: 'Abebe Bikila',
@@ -27,9 +27,15 @@ export default function Profile() {
     fetchStats();
   }, [user.id]);
 
+  const langDisplayMap = {
+    en: 'English (🇬🇧)',
+    am: 'አማርኛ (🇪🇹)',
+    om: 'Afaan Oromoo (🇪🇹)',
+  };
+
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>User Profile 👤</h2>
+      <h2 style={styles.title}>{t('userProfileTitle')}</h2>
 
       <div className="glass-card" style={styles.profileCard}>
         <div style={styles.avatar}>
@@ -41,11 +47,11 @@ export default function Profile() {
         <div style={styles.statsGrid}>
           <div style={styles.statBox}>
             <span style={styles.statVal}>{loading ? '...' : stats.ticketCount}</span>
-            <span style={styles.statLbl}>Tickets Purchased</span>
+            <span style={styles.statLbl}>{t('ticketsPurchased')}</span>
           </div>
           <div style={styles.statBox}>
             <span style={styles.statVal}>{loading ? '...' : stats.totalSpent}</span>
-            <span style={styles.statLbl}>ETB Spent</span>
+            <span style={styles.statLbl}>{t('etbSpent')}</span>
           </div>
         </div>
       </div>
@@ -54,29 +60,29 @@ export default function Profile() {
       <div className="glass-card" style={styles.noticeCard}>
         <div style={styles.noticeHeader}>
           <span style={{ fontSize: '1.4rem' }}>🎥</span>
-          <span style={styles.noticeTitle}>Live TikTok Draws</span>
+          <span style={styles.noticeTitle}>{t('liveNoticeHeader')}</span>
         </div>
         <p style={styles.noticeText}>
-          Winners are announced LIVE on TikTok! Follow our channel to watch the live draw.
+          {t('winnersAnnouncement')}
         </p>
         <div style={styles.noticeFooter}>
-          📍 <span>Prefer to collect in person? Visit us in Fiche.</span>
+          {t('inPersonPickup')}
         </div>
       </div>
 
       {/* Profile System Metadata Card */}
       <div className="glass-card" style={styles.infoCard}>
         <div style={styles.infoRow}>
-          <span>Telegram ID</span>
+          <span>{t('telegramIdLabel')}</span>
           <strong>{user.id}</strong>
         </div>
         <div style={styles.infoRow}>
-          <span>Language</span>
-          <strong>{user.language_code || 'en'}</strong>
+          <span>{t('languageLabel')}</span>
+          <strong>{langDisplayMap[language] || language}</strong>
         </div>
         <div style={styles.infoRow}>
-          <span>Bot Connected</span>
-          <strong style={{ color: '#10b981' }}>Active ✅</strong>
+          <span>{t('botConnectedLabel')}</span>
+          <strong style={{ color: '#10b981' }}>{t('activeBadge')}</strong>
         </div>
       </div>
     </div>

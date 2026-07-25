@@ -4,7 +4,10 @@ import apiClient from '../api/client.js';
 import Countdown from '../components/Countdown.jsx';
 import NumberGrid from '../components/NumberGrid.jsx';
 
+import { useLanguage } from '../i18n/useLanguage.jsx';
+
 export default function DrawDetail() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -63,9 +66,9 @@ export default function DrawDetail() {
   if (!draw) {
     return (
       <div style={styles.errorContainer}>
-        <h3>Draw Not Found</h3>
+        <h3>{t('noDrawFound')}</h3>
         <button className="gradient-btn" onClick={() => navigate('/')}>
-          Go Back
+          {t('back')}
         </button>
       </div>
     );
@@ -140,13 +143,13 @@ export default function DrawDetail() {
     <div style={styles.container}>
       {/* Top Navigation */}
       <button style={styles.backBtn} onClick={() => navigate('/')}>
-        ← Back
+        {t('back')}
       </button>
 
       {/* Image Banner */}
       <div className="glass-card" style={styles.banner}>
         <div style={styles.bannerHeader}>
-          <span style={styles.liveBadge}>LIVE DRAW</span>
+          <span style={styles.liveBadge}>{t('liveDraw')}</span>
           <Countdown targetDate={draw.end_time} />
         </div>
         <div style={styles.imageBox}>
@@ -173,7 +176,7 @@ export default function DrawDetail() {
             setErrorMessage('');
           }}
         >
-          ⚡ Quick Pick
+          {t('quickPick')}
         </button>
         <button
           style={purchaseMode === 'choose_numbers' ? { ...styles.modeTab, ...styles.activeModeTab } : styles.modeTab}
@@ -182,7 +185,7 @@ export default function DrawDetail() {
             setErrorMessage('');
           }}
         >
-          🎯 Choose Your Numbers
+          {t('chooseYourNumbers')}
         </button>
       </div>
 
@@ -198,10 +201,10 @@ export default function DrawDetail() {
         <div style={styles.sectionHeader}>
           <span style={styles.sectionTitle}>
             {purchaseMode === 'choose_numbers'
-              ? `Select ${quantity} Ticket Number(s) (${selectedNumbers.length}/${quantity})`
-              : 'Available Ticket Pool'}
+              ? t('selectTicketNumbers', { quantity }) + ` (${selectedNumbers.length}/${quantity})`
+              : t('availableTicketPool')}
           </span>
-          <span style={styles.remainingTag}>{remainingTickets} Left</span>
+          <span style={styles.remainingTag}>{remainingTickets} {t('left')}</span>
         </div>
         <NumberGrid
           totalTickets={draw.total_tickets}
@@ -213,7 +216,7 @@ export default function DrawDetail() {
 
       {/* Quantity Controls */}
       <div className="glass-card" style={styles.qtyBox}>
-        <span style={styles.qtyLabel}>Select Quantity</span>
+        <span style={styles.qtyLabel}>{t('selectQuantity')}</span>
         <div style={styles.counter}>
           <button
             style={styles.counterBtn}
@@ -242,7 +245,7 @@ export default function DrawDetail() {
       {/* Sticky Bottom Bar */}
       <div style={styles.stickyFooter}>
         <div>
-          <span style={styles.totalLabel}>Total Price</span>
+          <span style={styles.totalLabel}>{t('totalPrice')}</span>
           <div style={styles.totalVal}>{totalPrice} ETB</div>
         </div>
         <button
@@ -251,7 +254,7 @@ export default function DrawDetail() {
           onClick={handleCheckout}
           disabled={reserving}
         >
-          {reserving ? 'Reserving...' : 'Proceed to Checkout ➔'}
+          {reserving ? t('reserving') : t('proceedToCheckout')}
         </button>
       </div>
     </div>

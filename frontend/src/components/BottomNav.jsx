@@ -1,7 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useLanguage } from '../i18n/useLanguage.jsx';
 
 export default function BottomNav() {
+  const { t } = useLanguage();
+
   return (
     <nav style={styles.container}>
       <NavLink to="/" style={({ isActive }) => (isActive ? { ...styles.tab, ...styles.activeTab } : styles.tab)}>
@@ -9,7 +12,7 @@ export default function BottomNav() {
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
-        <span>Home</span>
+        <span>{t('home')}</span>
       </NavLink>
 
       <NavLink to="/tickets" style={({ isActive }) => (isActive ? { ...styles.tab, ...styles.activeTab } : styles.tab)}>
@@ -19,7 +22,7 @@ export default function BottomNav() {
           <path d="M13 11v2"/>
           <path d="M13 17v2"/>
         </svg>
-        <span>My Tickets</span>
+        <span>{t('myTicketsNav')}</span>
       </NavLink>
 
       <NavLink to="/profile" style={({ isActive }) => (isActive ? { ...styles.tab, ...styles.activeTab } : styles.tab)}>
@@ -27,7 +30,7 @@ export default function BottomNav() {
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
-        <span>Profile</span>
+        <span>{t('profileNav')}</span>
       </NavLink>
     </nav>
   );

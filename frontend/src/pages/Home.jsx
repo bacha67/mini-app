@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client.js';
 import DrawCard from '../components/DrawCard.jsx';
+import { useLanguage } from '../i18n/useLanguage.jsx';
+
 export default function Home() {
+  const { t } = useLanguage();
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function Home() {
       {/* User Header */}
       <div style={styles.header}>
         <div>
-          <span style={styles.greeting}>Welcome back 👋</span>
+          <span style={styles.greeting}>{t('welcomeBack')} 👋</span>
           <h2 style={styles.userName}>{user.first_name}</h2>
         </div>
         <div style={styles.pointsBadge}>
@@ -45,14 +48,14 @@ export default function Home() {
       {/* Hero Banner */}
       <div className="glass-card" style={styles.heroBanner}>
         <div>
-          <span style={styles.heroBadge}>🔥 TOP PRIZE</span>
-          <h3 style={styles.heroTitle}>Win Huge Rewards Today!</h3>
-          <p style={styles.heroSub}>Choose your lucky numbers or use Quick Pick.</p>
+          <span style={styles.heroBadge}>🔥 {t('topPrize')}</span>
+          <h3 style={styles.heroTitle}>{t('winHugeRewards')}</h3>
+          <p style={styles.heroSub}>{t('chooseLuckyOrQuickPick')}</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <h3 style={styles.sectionTitle}>Active Draws 🎯</h3>
+      <h3 style={styles.sectionTitle}>{t('activeDraws')} 🎯</h3>
 
       {loading ? (
         <div style={styles.loadingState}>
@@ -61,8 +64,8 @@ export default function Home() {
       ) : draws.length === 0 ? (
         <div className="glass-card" style={styles.emptyState}>
           <span style={{ fontSize: '3rem' }}>🎰</span>
-          <h4 style={{ margin: '10px 0 4px 0', color: '#fff' }}>No active draws right now</h4>
-          <p>Check back soon for new giveaways!</p>
+          <h4 style={{ margin: '10px 0 4px 0', color: '#fff' }}>{t('noActiveDraws')}</h4>
+          <p>{t('checkBackSoon')}</p>
         </div>
       ) : (
         <div>

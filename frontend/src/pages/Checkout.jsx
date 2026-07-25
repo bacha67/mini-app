@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client.js';
 
+import { useLanguage } from '../i18n/useLanguage.jsx';
+
 const BANKS = [
   { id: 'cbe', name: 'CBE (Commercial Bank of Ethiopia)', account: '1000123456789', owner: 'Telegram Lottery Ltd' },
   { id: 'telebirr', name: 'Telebirr', account: '0911223344', owner: 'Telegram Lottery Ltd' },
@@ -10,6 +12,7 @@ const BANKS = [
 ];
 
 export default function Checkout() {
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state || {};
@@ -90,9 +93,9 @@ export default function Checkout() {
       {/* Top Header */}
       <div style={styles.topBar}>
         <button style={styles.backBtn} onClick={() => navigate(-1)}>
-          ← Back
+          {t('back')}
         </button>
-        <span style={styles.stepTitle}>Step {step} of 3</span>
+        <span style={styles.stepTitle}>{t('stepProgress', { step })}</span>
       </div>
 
       {/* Step Progress Bar */}
@@ -103,37 +106,37 @@ export default function Checkout() {
       {/* STEP 1: Buyer Info & Bank Selection */}
       {step === 1 && (
         <form className="glass-card animate-fade-in" style={styles.card} onSubmit={handleProceedToPayment}>
-          <h3 style={styles.heading}>1. Order Summary & Bank</h3>
+          <h3 style={styles.heading}>{t('orderSummary')}</h3>
 
           <div style={styles.summaryBox}>
             <div style={styles.summaryRow}>
-              <span>Item:</span>
+              <span>{t('itemLabel')}</span>
               <strong>{state.drawTitle || 'Lottery Ticket'}</strong>
             </div>
             <div style={styles.summaryRow}>
-              <span>Quantity:</span>
+              <span>{t('quantityLabel')}</span>
               <strong>{quantity} Tickets</strong>
             </div>
             <div style={{ ...styles.summaryRow, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
-              <span>Total Amount:</span>
+              <span>{t('totalAmountLabel')}</span>
               <strong style={{ color: '#818cf8', fontSize: '1.1rem' }}>{totalPrice} ETB</strong>
             </div>
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Your Name</label>
+            <label style={styles.label}>{t('yourName')}</label>
             <input
               type="text"
               required
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder={t('enterYourName')}
               style={styles.input}
             />
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Phone Number</label>
+            <label style={styles.label}>{t('phoneNumber')}</label>
             <input
               type="tel"
               required
@@ -145,7 +148,7 @@ export default function Checkout() {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Select Bank</label>
+            <label style={styles.label}>{t('selectBank')}</label>
             <select
               value={selectedBank}
               onChange={(e) => setSelectedBank(e.target.value)}
@@ -160,7 +163,7 @@ export default function Checkout() {
           </div>
 
           <button type="submit" className="gradient-btn" disabled={loading} style={{ width: '100%', marginTop: '10px' }}>
-            {loading ? 'Processing...' : 'Proceed to Payment ➔'}
+            {loading ? t('processing') : t('proceedToPayment')}
           </button>
         </form>
       )}
@@ -168,18 +171,18 @@ export default function Checkout() {
       {/* STEP 2: Transfer Instructions */}
       {step === 2 && (
         <div className="glass-card animate-fade-in" style={styles.card}>
-          <h3 style={styles.heading}>2. Make Transfer</h3>
-          <p style={styles.subtext}>Please transfer the exact amount to the account below:</p>
+          <h3 style={styles.heading}>{t('makeTransfer')}</h3>
+          <p style={styles.subtext}>{t('transferInstruction')}</p>
 
           <div style={styles.bankCard}>
             <div style={styles.bankName}>{activeBankObj.name}</div>
             <div style={styles.accountNo}>{activeBankObj.account}</div>
-            <div style={styles.accountOwner}>Account Name: {activeBankObj.owner}</div>
-            <div style={styles.amountNotice}>Transfer Amount: {totalPrice} ETB</div>
+            <div style={styles.accountOwner}>{t('accountName')} {activeBankObj.owner}</div>
+            <div style={styles.amountNotice}>{t('transferAmount')} {totalPrice} ETB</div>
           </div>
 
           <form onSubmit={handleUploadScreenshot} style={{ marginTop: '20px' }}>
-            <label style={styles.label}>Upload Payment Receipt / Screenshot</label>
+            <label style={styles.label}>{t('uploadReceiptLabel')}</label>
             <input
               type="file"
               accept="image/png, image/jpeg"
@@ -189,7 +192,7 @@ export default function Checkout() {
             />
 
             <button type="submit" className="gradient-btn" disabled={loading || !file} style={{ width: '100%', marginTop: '16px' }}>
-              {loading ? 'Uploading Receipt...' : 'Submit Receipt for Verification ✅'}
+              {loading ? t('uploadingReceipt') : t('submitReceiptBtn')}
             </button>
           </form>
         </div>
@@ -199,14 +202,13 @@ export default function Checkout() {
       {step === 3 && (
         <div className="glass-card animate-fade-in" style={{ ...styles.card, textAlign: 'center', padding: '40px 20px' }}>
           <span style={{ fontSize: '4rem' }}>🎉</span>
-          <h2 style={{ fontSize: '1.5rem', margin: '14px 0 6px 0', color: '#fff' }}>Receipt Submitted!</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: '14px 0 6px 0', color: '#fff' }}>{t('receiptSubmittedTitle')}</h2>
           <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '20px' }}>
-            Your transaction <strong>#{transaction?.id}</strong> has been submitted to admins for verification.
-            You will receive a Telegram message with your lucky ticket numbers once approved!
+            {t('receiptSubmittedNotice', { id: transaction?.id })}
           </p>
 
           <button className="gradient-btn" onClick={() => navigate('/tickets')} style={{ width: '100%' }}>
-            View My Tickets 🎟️
+            {t('viewMyTicketsBtn')}
           </button>
         </div>
       )}
