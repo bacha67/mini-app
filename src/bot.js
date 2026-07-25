@@ -215,7 +215,7 @@ If you believe this is an error, please contact support.
     // Answer callback
     return ctx.answerCbQuery('Transaction rejected ❌');
   } catch (error) {
-    console.error(`Error rejecting transaction ${transactionId}:`, error);
+    console.error('Rejection error:', error);
     return ctx.answerCbQuery('Error processing rejection ❌', { show_alert: true });
   }
 });
