@@ -177,6 +177,27 @@ router.post('/:transactionId/upload', (req, res) => {
         return res.status(500).json({ error: 'ADMIN_GROUP_ID is not configured in .env' });
       }
 
+      // Check if transaction has reserved_ticket_ids
+      let selectedTicketsLine = '';
+      if (transaction.reserved_ticket_ids) {
+        try {
+          const reservedIds = typeof transaction.reserved_ticket_ids === 'string'
+            ? JSON.parse(transaction.reserved_ticket_ids)
+            : transaction.reserved_ticket_ids;
+
+          if (Array.isArray(reservedIds) && reservedIds.length > 0) {
+            const ticketRes = await pool.query(
+              'SELECT ticket_number FROM tickets WHERE id = ANY($1::int[]) ORDER BY ticket_number ASC',
+              [reservedIds]
+            );
+            const nums = ticketRes.rows.map((r) => `#${r.ticket_number}`).join(', ');
+            selectedTicketsLine = `\n🎟 <b>Selected Tickets:</b> ${nums}`;
+          }
+        } catch (e) {
+          console.error('Failed to parse reserved_ticket_ids for caption:', e);
+        }
+      }
+
       // Caption for the admin group message
       const caption = `
 🧾 <b>New Payment Screenshot Uploaded</b>
@@ -185,7 +206,7 @@ router.post('/:transactionId/upload', (req, res) => {
 👤 <b>Buyer Name:</b> ${transaction.buyer_name || 'N/A'}
 📱 <b>Buyer Phone:</b> ${transaction.buyer_phone || 'N/A'}
 🎰 <b>Draw Title:</b> ${drawTitle}
-🎟 <b>Quantity:</b> ${transaction.quantity}
+🎟 <b>Quantity:</b> ${transaction.quantity}${selectedTicketsLine}
 💵 <b>Amount:</b> ${transaction.amount}
 🏦 <b>Bank Selected:</b> ${transaction.bank_selected || 'N/A'}
       `.trim();
