@@ -4,9 +4,8 @@ node_modules/
 *.db-wal
 *.db-shm
 
-# Frontend env and build artifacts
+# Frontend env
 frontend/.env
-frontend/dist/
 
 # OS files
 .DS_Store
