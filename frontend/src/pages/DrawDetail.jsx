@@ -72,6 +72,7 @@ export default function DrawDetail() {
   }
 
   const totalPrice = draw.ticket_price * quantity;
+  const remainingTickets = draw.total_tickets - draw.tickets_sold;
   const user = window.Telegram?.WebApp?.initDataUnsafe?.user || {
     id: 123456789,
     first_name: 'Abebe Bikila',
