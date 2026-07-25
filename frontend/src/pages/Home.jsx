@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client.js';
 import DrawCard from '../components/DrawCard.jsx';
 import { useLanguage } from '../i18n/useLanguage.jsx';
+import promoBanner from '../assets/card.png';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -45,14 +46,17 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Hero Banner */}
-      <div className="glass-card" style={styles.heroBanner}>
-        <div>
-          <span style={styles.heroBadge}>🔥 {t('topPrize')}</span>
-          <h3 style={styles.heroTitle}>{t('winHugeRewards')}</h3>
-          <p style={styles.heroSub}>{t('chooseLuckyOrQuickPick')}</p>
-        </div>
-      </div>
+      {/* Hero Promo Banner */}
+      <img
+        src={promoBanner}
+        alt="Promo banner"
+        style={{
+          width: '100%',
+          borderRadius: '16px',
+          display: 'block',
+          marginBottom: '16px',
+        }}
+      />
 
       {/* Main Content */}
       <h3 style={styles.sectionTitle}>{t('activeDraws')} 🎯</h3>
