@@ -138,7 +138,7 @@ export default function DrawDetail() {
 
 const styles = {
   container: {
-    padding: '16px 16px 110px 16px',
+    padding: '16px 16px 160px 16px',
   },
   loadingContainer: {
     padding: '60px 20px',
