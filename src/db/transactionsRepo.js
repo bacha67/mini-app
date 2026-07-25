@@ -101,3 +101,21 @@ export async function getPendingTransactionsForUser(userId) {
   const res = await pool.query(query, [userId]);
   return res.rows;
 }
+
+/**
+ * Store reserved_ticket_ids on a transaction
+ * @param {number|string} transactionId
+ * @param {Array<number>|string} reservedTicketIds
+ * @returns {Promise<object|null>} Updated transaction row
+ */
+export async function setReservedTickets(transactionId, reservedTicketIds) {
+  const idsStr = typeof reservedTicketIds === 'string' ? reservedTicketIds : JSON.stringify(reservedTicketIds);
+  const query = `
+    UPDATE transactions
+    SET reserved_ticket_ids = $1
+    WHERE id = $2
+    RETURNING *
+  `;
+  const res = await pool.query(query, [idsStr, transactionId]);
+  return res.rows[0] || null;
+}

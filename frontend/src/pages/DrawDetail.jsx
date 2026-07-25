@@ -72,7 +72,10 @@ export default function DrawDetail() {
   }
 
   const totalPrice = draw.ticket_price * quantity;
-  const remainingTickets = draw.total_tickets - draw.tickets_sold;
+  const user = window.Telegram?.WebApp?.initDataUnsafe?.user || {
+    id: 123456789,
+    first_name: 'Abebe Bikila',
+  };
 
   const handleCheckout = async () => {
     setErrorMessage('');
@@ -85,14 +88,18 @@ export default function DrawDetail() {
 
       setReserving(true);
       try {
-        await apiClient.post('/checkout/reserve', {
+        const res = await apiClient.post('/checkout/reserve', {
+          telegramId: user.id,
           drawId: draw.id,
-          selectedNumbers,
+          ticketNumbers: selectedNumbers,
         });
+
+        const createdTransaction = res.data;
 
         // Reserve success -> proceed to checkout
         navigate('/checkout', {
           state: {
+            transaction: createdTransaction,
             drawId: draw.id,
             drawTitle: draw.title,
             ticketPrice: draw.ticket_price,
@@ -103,10 +110,9 @@ export default function DrawDetail() {
         });
       } catch (err) {
         console.error('Reservation error:', err);
-        const unavailable = err.response?.data?.unavailableNumbers;
+        const unavailable = err.response?.data?.unavailable || err.response?.data?.unavailableNumbers;
         if (unavailable && unavailable.length > 0) {
           setErrorMessage(`Ticket(s) #${unavailable.join(', #')} were just taken! Please select available numbers.`);
-          // Refresh unavailable tickets
           await fetchDrawDetails();
           setSelectedNumbers((prev) => prev.filter((n) => !unavailable.includes(n)));
         } else {

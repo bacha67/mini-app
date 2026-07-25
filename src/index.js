@@ -3,6 +3,7 @@ dotenv.config();
 
 import bot from './bot.js';
 import app from './api/server.js';
+import { releaseExpiredReservations } from './jobs/releaseExpiredReservations.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -19,6 +20,11 @@ const fullWebhookUrl = `${domain}${webhookPath}`;
 // Start Express API server (serves API + static frontend + webhook)
 const server = app.listen(PORT, async () => {
   console.log(`🌐 Express API server running on port ${PORT}`);
+
+  // Schedule background cleanup job for expired ticket reservations (runs every 5 minutes)
+  setInterval(releaseExpiredReservations, 5 * 60 * 1000);
+  // Also run once immediately on startup
+  releaseExpiredReservations();
 
   // Set the Telegram webhook after the server is live
   try {

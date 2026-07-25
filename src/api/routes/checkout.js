@@ -4,11 +4,12 @@ import { Markup } from 'telegraf';
 import bot from '../../bot.js';
 import { getUserByTelegramId } from '../../db/usersRepo.js';
 import { getDrawById } from '../../db/drawsRepo.js';
-import { reserveSpecificTickets } from '../../db/ticketsRepo.js';
+import { reserveTickets } from '../../db/ticketsRepo.js';
 import {
   createTransaction,
   getTransactionById,
   attachScreenshot,
+  setReservedTickets,
 } from '../../db/transactionsRepo.js';
 
 const router = Router();
@@ -27,35 +28,83 @@ const upload = multer({
   },
 });
 
-// POST /api/checkout/reserve -> Reserve specific ticket numbers
+// POST /api/checkout/reserve -> Atomically reserve specific ticket numbers and create transaction
 router.post('/reserve', async (req, res) => {
   try {
-    const { drawId, selectedNumbers } = req.body;
+    const { telegramId, drawId, ticketNumbers, selectedNumbers, buyerName, buyerPhone, bankSelected } = req.body;
+    const numbers = ticketNumbers || selectedNumbers;
 
-    if (!drawId || !Array.isArray(selectedNumbers) || selectedNumbers.length === 0) {
-      return res.status(400).json({ error: 'drawId and selectedNumbers array are required' });
+    if (!telegramId || !drawId || !Array.isArray(numbers) || numbers.length === 0) {
+      return res.status(400).json({ error: 'telegramId, drawId, and ticketNumbers array are required' });
     }
 
-    const result = await reserveSpecificTickets(drawId, selectedNumbers);
+    // 1. Look up user
+    const user = await getUserByTelegramId(telegramId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    if (!result.success) {
+    // 2. Look up draw
+    const draw = await getDrawById(drawId);
+    if (!draw || draw.status !== 'open') {
+      return res.status(404).json({ error: 'Draw not found or not open' });
+    }
+
+    // 3. Atomically reserve tickets
+    const reservedRows = await reserveTickets(drawId, numbers, user.id);
+
+    // 4. If fewer tickets reserved than requested
+    if (reservedRows.length < numbers.length) {
+      const reservedSet = new Set(reservedRows.map((r) => r.ticket_number));
+      const unavailable = numbers.filter((n) => !reservedSet.has(n));
+
       return res.status(409).json({
-        error: 'Some selected ticket numbers are no longer available',
-        unavailableNumbers: result.unavailableNumbers,
+        error: 'Some numbers were just taken',
+        unavailable,
       });
     }
 
-    res.json({ success: true, selectedNumbers });
+    // 5. Calculate amount and create transaction
+    const amount = draw.ticket_price * numbers.length;
+    const reservedTicketIds = reservedRows.map((r) => r.id);
+
+    let transaction = await createTransaction(
+      user.id,
+      drawId,
+      numbers.length,
+      amount,
+      buyerName,
+      buyerPhone,
+      bankSelected
+    );
+
+    transaction = await setReservedTickets(transaction.id, reservedTicketIds);
+
+    // 6. Return transaction as JSON
+    res.status(201).json(transaction);
   } catch (error) {
     console.error('Error reserving specific tickets:', error);
     res.status(500).json({ error: 'Failed to reserve tickets' });
   }
 });
 
+import pool from '../../db/pool.js';
+
 // POST /api/checkout/quick-pick
 router.post('/quick-pick', async (req, res) => {
   try {
-    const { telegramId, drawId, quantity, buyerName, buyerPhone, bankSelected } = req.body;
+    const { telegramId, drawId, quantity, buyerName, buyerPhone, bankSelected, transactionId } = req.body;
+
+    if (transactionId) {
+      const query = `
+        UPDATE transactions
+        SET buyer_name = $1, buyer_phone = $2, bank_selected = $3
+        WHERE id = $4
+        RETURNING *
+      `;
+      const resTx = await pool.query(query, [buyerName, buyerPhone, bankSelected, transactionId]);
+      return res.json(resTx.rows[0]);
+    }
 
     if (!telegramId || !drawId || !quantity) {
       return res.status(400).json({ error: 'telegramId, drawId, and quantity are required' });

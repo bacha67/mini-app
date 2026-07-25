@@ -17,6 +17,8 @@ import {
   rejectTransaction,
 } from './db/transactionsRepo.js';
 
+import pool from './db/pool.js';
+
 dotenv.config();
 
 const botToken = process.env.BOT_TOKEN;
@@ -103,14 +105,30 @@ bot.action(/^approve_(\d+)$/, async (ctx) => {
       return ctx.answerCbQuery(`Already processed (${transaction.status})`, { show_alert: true });
     }
 
-    // 4 & 5. Get random available tickets
-    const tickets = await getRandomAvailableTickets(transaction.draw_id, transaction.quantity);
-    if (!tickets || tickets.length < transaction.quantity) {
-      return ctx.answerCbQuery('Not enough tickets available! ⚠️', { show_alert: true });
-    }
+    // 4 & 5. Get tickets (reserved vs random quick-pick)
+    let ticketIds = [];
+    let ticketNumbers = [];
+    let tickets = [];
 
-    const ticketIds = tickets.map((t) => t.id);
-    const ticketNumbers = tickets.map((t) => t.ticket_number);
+    if (transaction.reserved_ticket_ids) {
+      // Choose Your Numbers path — use exact reserved tickets
+      const reservedIds = typeof transaction.reserved_ticket_ids === 'string'
+        ? JSON.parse(transaction.reserved_ticket_ids)
+        : transaction.reserved_ticket_ids;
+
+      const res = await pool.query('SELECT id, ticket_number FROM tickets WHERE id = ANY($1::int[])', [reservedIds]);
+      tickets = res.rows;
+      ticketIds = tickets.map((t) => t.id);
+      ticketNumbers = tickets.map((t) => t.ticket_number);
+    } else {
+      // Quick Pick path — random available tickets
+      tickets = await getRandomAvailableTickets(transaction.draw_id, transaction.quantity);
+      if (!tickets || tickets.length < transaction.quantity) {
+        return ctx.answerCbQuery('Not enough tickets available! ⚠️', { show_alert: true });
+      }
+      ticketIds = tickets.map((t) => t.id);
+      ticketNumbers = tickets.map((t) => t.ticket_number);
+    }
 
     // 6. Assign tickets to user
     await assignTicketsToUser(ticketIds, transaction.user_id);
@@ -123,7 +141,8 @@ bot.action(/^approve_(\d+)$/, async (ctx) => {
 
     // 9. Edit admin message caption and remove inline buttons
     const existingCaption = ctx.callbackQuery.message?.caption || '';
-    const newCaption = `${existingCaption}\n\n✅ <b>Approved by ${adminName}</b>`;
+    const assignedList = ticketNumbers.map((n) => `#${n}`).join(', ');
+    const newCaption = `${existingCaption}\n\n✅ <b>Approved by ${adminName}</b> — 🎟 <b>Tickets:</b> ${assignedList}`;
 
     try {
       await ctx.editMessageCaption(newCaption, { parse_mode: 'HTML', reply_markup: { inline_keyboard: [] } });

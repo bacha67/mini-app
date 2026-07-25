@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   user_id INTEGER REFERENCES users(id),
   status TEXT DEFAULT 'available',
   purchased_at TIMESTAMP,
+  reserved_at TIMESTAMP,
   UNIQUE(draw_id, ticket_number)
 );
 
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   draw_id INTEGER REFERENCES draws(id),
   quantity INTEGER NOT NULL,
   ticket_ids TEXT,
+  reserved_ticket_ids TEXT,
   amount INTEGER NOT NULL,
   buyer_name TEXT,
   buyer_phone TEXT,

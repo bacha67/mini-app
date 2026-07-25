@@ -24,14 +24,14 @@ export default function Checkout() {
   const [buyerPhone, setBuyerPhone] = useState('');
   const [selectedBank, setSelectedBank] = useState(BANKS[0].name);
   const [loading, setLoading] = useState(false);
-  const [transaction, setTransaction] = useState(null);
+  const [transaction, setTransaction] = useState(state.transaction || null);
   const [file, setFile] = useState(null);
 
   const drawId = state.drawId || 1;
   const quantity = state.quantity || 1;
   const totalPrice = state.totalPrice || 50;
 
-  // Step 1 -> Step 2 (Quick Pick Checkout)
+  // Step 1 -> Step 2 (Quick Pick or Reserved Checkout)
   const handleProceedToPayment = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -44,6 +44,7 @@ export default function Checkout() {
         buyerName,
         buyerPhone,
         bankSelected: selectedBank,
+        transactionId: transaction?.id,
       });
 
       setTransaction(res.data);

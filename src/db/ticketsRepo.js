@@ -111,3 +111,23 @@ export async function reserveSpecificTickets(drawId, ticketNumbers) {
 
   return { success: true };
 }
+
+/**
+ * Atomically reserve specific ticket numbers for a user
+ * @param {number|string} drawId
+ * @param {Array<number>} ticketNumbers
+ * @param {number|string} userId
+ * @returns {Promise<Array>} List of reserved ticket rows ({ id, ticket_number })
+ */
+export async function reserveTickets(drawId, ticketNumbers, userId) {
+  if (!ticketNumbers || ticketNumbers.length === 0) return [];
+
+  const query = `
+    UPDATE tickets
+    SET status = 'reserved', user_id = $1, reserved_at = NOW()
+    WHERE draw_id = $2 AND ticket_number = ANY($3::int[]) AND status = 'available'
+    RETURNING id, ticket_number
+  `;
+  const res = await pool.query(query, [userId, drawId, ticketNumbers]);
+  return res.rows;
+}
