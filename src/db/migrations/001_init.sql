@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   bank_selected TEXT,
   screenshot_file_id TEXT,
   status TEXT DEFAULT 'pending',
-  admin_id INTEGER,
+  admin_id BIGINT,
   created_at TIMESTAMP DEFAULT NOW(),
   reviewed_at TIMESTAMP
 );
