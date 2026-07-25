@@ -33,12 +33,6 @@ const server = app.listen(PORT, async () => {
 // Graceful shutdown handler
 const shutdown = async (signal) => {
   console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-  try {
-    await bot.telegram.deleteWebhook();
-    console.log('Webhook removed.');
-  } catch (err) {
-    console.error('Failed to delete webhook on shutdown:', err.message);
-  }
   server.close(() => {
     console.log('HTTP server closed.');
     process.exit(0);
