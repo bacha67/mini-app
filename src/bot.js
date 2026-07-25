@@ -157,7 +157,7 @@ Good luck! 🍀
     // 11. Answer callback
     return ctx.answerCbQuery('Transaction approved ✅');
   } catch (error) {
-    console.error(`Error approving transaction ${transactionId}:`, error);
+    console.error('Approval error:', error);
     return ctx.answerCbQuery('Error processing approval ❌', { show_alert: true });
   }
 });
