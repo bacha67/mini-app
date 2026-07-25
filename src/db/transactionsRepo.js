@@ -119,3 +119,18 @@ export async function setReservedTickets(transactionId, reservedTicketIds) {
   const res = await pool.query(query, [idsStr, transactionId]);
   return res.rows[0] || null;
 }
+
+/**
+ * Get total amount spent by a user on approved transactions
+ * @param {number|string} userId
+ * @returns {Promise<number>} Total amount spent
+ */
+export async function getUserTotalSpent(userId) {
+  const query = `
+    SELECT COALESCE(SUM(amount), 0) AS total
+    FROM transactions
+    WHERE user_id = $1 AND status = 'approved'
+  `;
+  const res = await pool.query(query, [userId]);
+  return parseInt(res.rows[0].total, 10) || 0;
+}

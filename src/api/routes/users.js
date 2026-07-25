@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getUserByTelegramId } from '../../db/usersRepo.js';
-import { getPendingTransactionsForUser } from '../../db/transactionsRepo.js';
-import { getUserTickets } from '../../db/ticketsRepo.js';
+import { getPendingTransactionsForUser, getUserTotalSpent } from '../../db/transactionsRepo.js';
+import { getUserTickets, getUserTicketCount } from '../../db/ticketsRepo.js';
 
 const router = Router();
 
@@ -38,6 +38,28 @@ router.get('/:telegramId/tickets', async (req, res) => {
   } catch (error) {
     console.error(`Error fetching tickets for user ${req.params.telegramId}:`, error);
     res.status(500).json({ error: 'Failed to fetch user tickets' });
+  }
+});
+
+// GET /api/users/:telegramId/stats -> Get user summary stats (ticketCount, totalSpent)
+router.get('/:telegramId/stats', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const user = await getUserByTelegramId(telegramId);
+
+    if (!user) {
+      return res.json({ ticketCount: 0, totalSpent: 0 });
+    }
+
+    const [ticketCount, totalSpent] = await Promise.all([
+      getUserTicketCount(user.id),
+      getUserTotalSpent(user.id),
+    ]);
+
+    res.json({ ticketCount, totalSpent });
+  } catch (error) {
+    console.error(`Error fetching stats for user ${req.params.telegramId}:`, error);
+    res.status(500).json({ error: 'Failed to fetch user stats' });
   }
 });
 

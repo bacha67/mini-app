@@ -131,3 +131,18 @@ export async function reserveTickets(drawId, ticketNumbers, userId) {
   const res = await pool.query(query, [userId, drawId, ticketNumbers]);
   return res.rows;
 }
+
+/**
+ * Get total number of active/sold tickets owned by a user
+ * @param {number|string} userId
+ * @returns {Promise<number>} Count of sold tickets
+ */
+export async function getUserTicketCount(userId) {
+  const query = `
+    SELECT COUNT(*) AS count
+    FROM tickets
+    WHERE user_id = $1 AND status = 'sold'
+  `;
+  const res = await pool.query(query, [userId]);
+  return parseInt(res.rows[0].count, 10) || 0;
+}
