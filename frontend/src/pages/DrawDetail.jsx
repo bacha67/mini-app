@@ -138,7 +138,7 @@ export default function DrawDetail() {
 
 const styles = {
   container: {
-    padding: '16px 16px 160px 16px',
+    padding: '16px 16px 175px 16px',
   },
   loadingContainer: {
     padding: '60px 20px',
@@ -257,7 +257,7 @@ const styles = {
   },
   stickyFooter: {
     position: 'fixed',
-    bottom: 0,
+    bottom: '65px',
     left: '50%',
     transform: 'translateX(-50%)',
     width: '100%',
@@ -269,7 +269,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 1000,
+    zIndex: 999,
   },
   totalLabel: {
     fontSize: '0.7rem',
