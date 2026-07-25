@@ -85,3 +85,29 @@ export async function getUserTickets(userId) {
   const res = await pool.query(query, [userId]);
   return res.rows;
 }
+
+/**
+ * Check if specific ticket numbers for a draw are available
+ * @param {number|string} drawId
+ * @param {Array<number>} ticketNumbers
+ * @returns {Promise<{success: boolean, unavailableNumbers?: number[]}>}
+ */
+export async function reserveSpecificTickets(drawId, ticketNumbers) {
+  if (!ticketNumbers || ticketNumbers.length === 0) {
+    return { success: true };
+  }
+
+  const query = `
+    SELECT ticket_number
+    FROM tickets
+    WHERE draw_id = $1 AND ticket_number = ANY($2::int[]) AND status != 'available'
+  `;
+  const res = await pool.query(query, [drawId, ticketNumbers]);
+
+  if (res.rows.length > 0) {
+    const unavailableNumbers = res.rows.map((r) => r.ticket_number);
+    return { success: false, unavailableNumbers };
+  }
+
+  return { success: true };
+}

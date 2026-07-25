@@ -10,26 +10,47 @@ export default function DrawDetail() {
 
   const [draw, setDraw] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reserving, setReserving] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [soldTickets, setSoldTickets] = useState([]);
+  const [purchaseMode, setPurchaseMode] = useState('quick_pick'); // 'quick_pick' | 'choose_numbers'
+  const [selectedNumbers, setSelectedNumbers] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const fetchDrawDetails = async () => {
+    try {
+      const [drawRes, ticketsRes] = await Promise.all([
+        apiClient.get(`/draws/${id}`),
+        apiClient.get(`/draws/${id}/tickets`),
+      ]);
+      setDraw(drawRes.data);
+      setSoldTickets(ticketsRes.data.soldTicketNumbers || []);
+    } catch (err) {
+      console.error('Failed to load draw details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchDraw() {
-      try {
-        const [drawRes, ticketsRes] = await Promise.all([
-          apiClient.get(`/draws/${id}`),
-          apiClient.get(`/draws/${id}/tickets`),
-        ]);
-        setDraw(drawRes.data);
-        setSoldTickets(ticketsRes.data.soldTicketNumbers || []);
-      } catch (err) {
-        console.error('Failed to load draw details:', err);
-      } finally {
-        setLoading(false);
+    fetchDrawDetails();
+  }, [id]);
+
+  const handleSelectNumber = (num) => {
+    if (purchaseMode !== 'choose_numbers') return;
+    setErrorMessage('');
+
+    if (selectedNumbers.includes(num)) {
+      setSelectedNumbers((prev) => prev.filter((n) => n !== num));
+    } else {
+      if (selectedNumbers.length >= quantity) {
+        // Replace oldest or keep max quantity
+        setSelectedNumbers((prev) => [...prev.slice(1), num]);
+      } else {
+        setSelectedNumbers((prev) => [...prev, num]);
       }
     }
-    fetchDraw();
-  }, [id]);
+  };
 
   if (loading) {
     return (
@@ -53,16 +74,59 @@ export default function DrawDetail() {
   const totalPrice = draw.ticket_price * quantity;
   const remainingTickets = draw.total_tickets - draw.tickets_sold;
 
-  const handleCheckout = () => {
-    navigate('/checkout', {
-      state: {
-        drawId: draw.id,
-        drawTitle: draw.title,
-        ticketPrice: draw.ticket_price,
-        quantity,
-        totalPrice,
-      },
-    });
+  const handleCheckout = async () => {
+    setErrorMessage('');
+
+    if (purchaseMode === 'choose_numbers') {
+      if (selectedNumbers.length === 0) {
+        setErrorMessage('Please select your ticket number(s) from the grid below.');
+        return;
+      }
+
+      setReserving(true);
+      try {
+        await apiClient.post('/checkout/reserve', {
+          drawId: draw.id,
+          selectedNumbers,
+        });
+
+        // Reserve success -> proceed to checkout
+        navigate('/checkout', {
+          state: {
+            drawId: draw.id,
+            drawTitle: draw.title,
+            ticketPrice: draw.ticket_price,
+            quantity: selectedNumbers.length,
+            totalPrice: draw.ticket_price * selectedNumbers.length,
+            selectedNumbers,
+          },
+        });
+      } catch (err) {
+        console.error('Reservation error:', err);
+        const unavailable = err.response?.data?.unavailableNumbers;
+        if (unavailable && unavailable.length > 0) {
+          setErrorMessage(`Ticket(s) #${unavailable.join(', #')} were just taken! Please select available numbers.`);
+          // Refresh unavailable tickets
+          await fetchDrawDetails();
+          setSelectedNumbers((prev) => prev.filter((n) => !unavailable.includes(n)));
+        } else {
+          setErrorMessage(err.response?.data?.error || 'Failed to reserve selected numbers. Please try again.');
+        }
+      } finally {
+        setReserving(false);
+      }
+    } else {
+      // Quick Pick Mode
+      navigate('/checkout', {
+        state: {
+          drawId: draw.id,
+          drawTitle: draw.title,
+          ticketPrice: draw.ticket_price,
+          quantity,
+          totalPrice,
+        },
+      });
+    }
   };
 
   return (
@@ -93,13 +157,51 @@ export default function DrawDetail() {
         <p style={styles.desc}>{draw.description || 'Exclusive giveaway contest.'}</p>
       </div>
 
+      {/* Mode Selector Tabs */}
+      <div style={styles.modeTabs}>
+        <button
+          style={purchaseMode === 'quick_pick' ? { ...styles.modeTab, ...styles.activeModeTab } : styles.modeTab}
+          onClick={() => {
+            setPurchaseMode('quick_pick');
+            setErrorMessage('');
+          }}
+        >
+          ⚡ Quick Pick
+        </button>
+        <button
+          style={purchaseMode === 'choose_numbers' ? { ...styles.modeTab, ...styles.activeModeTab } : styles.modeTab}
+          onClick={() => {
+            setPurchaseMode('choose_numbers');
+            setErrorMessage('');
+          }}
+        >
+          🎯 Choose Your Numbers
+        </button>
+      </div>
+
+      {/* Error Message Alert */}
+      {errorMessage && (
+        <div style={styles.errorAlert}>
+          <span>⚠️ {errorMessage}</span>
+        </div>
+      )}
+
       {/* Ticket Grid Section */}
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <span style={styles.sectionTitle}>Available Ticket Pool</span>
+          <span style={styles.sectionTitle}>
+            {purchaseMode === 'choose_numbers'
+              ? `Select ${quantity} Ticket Number(s) (${selectedNumbers.length}/${quantity})`
+              : 'Available Ticket Pool'}
+          </span>
           <span style={styles.remainingTag}>{remainingTickets} Left</span>
         </div>
-        <NumberGrid totalTickets={draw.total_tickets} soldTickets={soldTickets} />
+        <NumberGrid
+          totalTickets={draw.total_tickets}
+          soldTickets={soldTickets}
+          selectedNumbers={selectedNumbers}
+          onSelect={handleSelectNumber}
+        />
       </div>
 
       {/* Quantity Controls */}
@@ -108,7 +210,15 @@ export default function DrawDetail() {
         <div style={styles.counter}>
           <button
             style={styles.counterBtn}
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            onClick={() => {
+              setQuantity((q) => {
+                const newQ = Math.max(1, q - 1);
+                if (selectedNumbers.length > newQ) {
+                  setSelectedNumbers((prev) => prev.slice(0, newQ));
+                }
+                return newQ;
+              });
+            }}
           >
             -
           </button>
@@ -128,8 +238,13 @@ export default function DrawDetail() {
           <span style={styles.totalLabel}>Total Price</span>
           <div style={styles.totalVal}>{totalPrice} ETB</div>
         </div>
-        <button className="gradient-btn" style={styles.checkoutBtn} onClick={handleCheckout}>
-          Proceed to Checkout ➔
+        <button
+          className="gradient-btn"
+          style={styles.checkoutBtn}
+          onClick={handleCheckout}
+          disabled={reserving}
+        >
+          {reserving ? 'Reserving...' : 'Proceed to Checkout ➔'}
         </button>
       </div>
     </div>
@@ -200,6 +315,40 @@ const styles = {
   desc: {
     fontSize: '0.9rem',
     color: '#94a3b8',
+  },
+  modeTabs: {
+    display: 'flex',
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '12px',
+    padding: '4px',
+    marginBottom: '16px',
+  },
+  modeTab: {
+    flex: 1,
+    padding: '10px 0',
+    background: 'none',
+    border: 'none',
+    color: '#94a3b8',
+    fontWeight: '700',
+    fontSize: '0.85rem',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  activeModeTab: {
+    background: '#6366f1',
+    color: '#fff',
+    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+  },
+  errorAlert: {
+    background: 'rgba(239, 68, 68, 0.15)',
+    border: '1px solid rgba(239, 68, 68, 0.3)',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    color: '#fca5a5',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    marginBottom: '16px',
   },
   sectionHeader: {
     display: 'flex',

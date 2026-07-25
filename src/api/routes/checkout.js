@@ -4,6 +4,7 @@ import { Markup } from 'telegraf';
 import bot from '../../bot.js';
 import { getUserByTelegramId } from '../../db/usersRepo.js';
 import { getDrawById } from '../../db/drawsRepo.js';
+import { reserveSpecificTickets } from '../../db/ticketsRepo.js';
 import {
   createTransaction,
   getTransactionById,
@@ -24,6 +25,31 @@ const upload = multer({
       cb(new Error('Only PNG and JPEG images are allowed'));
     }
   },
+});
+
+// POST /api/checkout/reserve -> Reserve specific ticket numbers
+router.post('/reserve', async (req, res) => {
+  try {
+    const { drawId, selectedNumbers } = req.body;
+
+    if (!drawId || !Array.isArray(selectedNumbers) || selectedNumbers.length === 0) {
+      return res.status(400).json({ error: 'drawId and selectedNumbers array are required' });
+    }
+
+    const result = await reserveSpecificTickets(drawId, selectedNumbers);
+
+    if (!result.success) {
+      return res.status(409).json({
+        error: 'Some selected ticket numbers are no longer available',
+        unavailableNumbers: result.unavailableNumbers,
+      });
+    }
+
+    res.json({ success: true, selectedNumbers });
+  } catch (error) {
+    console.error('Error reserving specific tickets:', error);
+    res.status(500).json({ error: 'Failed to reserve tickets' });
+  }
 });
 
 // POST /api/checkout/quick-pick
