@@ -5,10 +5,10 @@ import apiClient from '../api/client.js';
 import { useLanguage } from '../i18n/useLanguage.jsx';
 
 const BANKS = [
-  { id: 'cbe', name: 'CBE (Commercial Bank of Ethiopia)', account: '1000123456789', owner: 'Telegram Lottery Ltd' },
-  { id: 'telebirr', name: 'Telebirr', account: '0911223344', owner: 'Telegram Lottery Ltd' },
-  { id: 'dashen', name: 'Dashen Bank', account: '509988776655', owner: 'Telegram Lottery Ltd' },
-  { id: 'boa', name: 'Bank of Abyssinia', account: '887766554433', owner: 'Telegram Lottery Ltd' },
+  { id: 'cbe', name: 'CBE (Commercial Bank of Ethiopia)', account: '1000071226787', owner: 'Ararso Abdissa Yadeta' },
+  { id: 'telebirr', name: 'Telebirr', account: '0928282840', owner: 'Ararso Abdissa Yadeta' },
+  { id: 'dashen', name: 'Dashen Bank', account: '509988776655', owner: 'Ararso Abdissa Yadeta' },
+  { id: 'boa', name: 'Bank of Abyssinia', account: '887766554433', owner: 'Ararso Abdissa Yadeta' },
 ];
 
 export default function Checkout() {
